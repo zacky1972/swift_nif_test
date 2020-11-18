@@ -1,10 +1,12 @@
 #include <stdlib.h>
 #include <erl_nif.h>
+#include "caller.h"
 
 static ERL_NIF_TERM test(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-	ERL_NIF_TERM atom_error = enif_make_atom(env, "error");
-	return enif_make_tuple(env, 2, atom_error, enif_make_atom(env, "not_impelmented"));
+	caller();
+	ERL_NIF_TERM atom_ok = enif_make_atom(env, "ok");
+	return enif_make_tuple(env, 2, atom_ok, enif_make_atom(env, "true"));
 }
 
 static ErlNifFunc nif_funcs[] =

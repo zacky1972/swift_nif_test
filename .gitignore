@@ -28,3 +28,5 @@ swift_nif_test-*.tar
 
 /priv
 /obj
+/header
+/ExampleClass*

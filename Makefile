@@ -1,5 +1,7 @@
 .phony: all clean
 
+# PATH += /System/Library/Frameworks
+
 CC := /usr/bin/clang
 
 ifeq ($(ERL_EI_INCLUDE_DIR),)
@@ -15,7 +17,7 @@ endif
 ERL_CFLAGS ?= -I$(ERL_EI_INCLUDE_DIR)
 ERL_LDFLAGS ?= -L$(ERL_EI_LIBDIR)
 
-LDFLAGS += -shared -lstdc++
+LDFLAGS += -shared
 CFLAGS ?= -std=c11 -Ofast -Wall -Wextra -Wno-unused-parameter
 
 ifeq ($(CROSSCOMPILE),)
@@ -24,7 +26,7 @@ ifeq ($(CROSSCOMPILE),)
 		CFLAGS += -fPIC
 
 		ifeq ($(shell uname),Darwin)
-			LDFLAGS += -dynamiclib -undefined dynamic_lookup
+			LDFLAGS += -L`xcrun --show-sdk-path`/usr/lib/swift -dynamiclib -undefined dynamic_lookup
 		endif
 	endif
 endif
@@ -43,7 +45,7 @@ $(warning C_DEPS = $(C_DEPS))
 OLD_SHELL := $(SHELL)
 SHELL = $(warning [Making: $@] [Dependencies: $^] [Changed: $?])$(OLD_SHELL)
 
-all: priv obj $(NIF)
+all: priv obj header $(NIF)
 
 
 priv:
@@ -52,7 +54,10 @@ priv:
 obj:
 	mkdir -p obj
 
-$(NIF): $(C_OBJS)
+header:
+	mkdir -p header
+
+$(NIF): $(C_OBJS) obj/ExampleClass.o obj/caller.o
 	$(CC) -o $@ $^ $(ERL_LDFLAGS) $(LDFLAGS) $(CV_LDFLAGS)
 
 $(C_DEPS): obj/%.d: c_src/%.c
@@ -61,7 +66,17 @@ $(C_DEPS): obj/%.d: c_src/%.c
 $(C_OBJS): obj/%.o: c_src/%.c obj/%.d
 	$(CC) -c $(ERL_CFLAGS) $(CFLAGS) -o $@ $<
 
+obj/caller.o: c_src/caller.m header/ExampleClass-Swift.h
+	clang -I header -c $< -o $@
+
+obj/ExampleClass.o: c_src/ExampleClass.swift
+	swiftc -emit-object -parse-as-library $< -o $@
+
+header/ExampleClass-Swift.h: c_src/ExampleClass.swift
+	swiftc $< -emit-objc-header -emit-objc-header-path $@
+
 include $(shell ls $(C_DEPS) 2>/dev/null)
 
 clean:
-	$(RM) $(NIF) obj/*
+	$(RM) $(NIF) obj/* header/* ExampleClass*
+
