@@ -25,3 +25,6 @@ swift_nif_test-*.tar
 
 # Temporary files for e.g. tests
 /tmp
+
+/priv
+/obj
