@@ -1,0 +1,2 @@
+defmodule SwiftNifTest do
+end
