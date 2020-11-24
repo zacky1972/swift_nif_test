@@ -2,8 +2,6 @@
 
 # PATH += /System/Library/Frameworks
 
-CC := /usr/bin/clang
-
 ifeq ($(ERL_EI_INCLUDE_DIR),)
 	ERL_ROOT_DIR = $(shell erl -eval "io:format(\"~s~n\", [code:root_dir()])" -s init stop -noshell)
 	ifeq ($(ERL_ROOT_DIR),)
@@ -26,6 +24,7 @@ ifeq ($(CROSSCOMPILE),)
 		CFLAGS += -fPIC
 
 		ifeq ($(shell uname),Darwin)
+			CC := xcrun clang
 			LDFLAGS += -L`xcrun --show-sdk-path`/usr/lib/swift -dynamiclib -undefined dynamic_lookup
 		endif
 	endif
@@ -67,13 +66,13 @@ $(C_OBJS): obj/%.o: c_src/%.c obj/%.d
 	$(CC) -c $(ERL_CFLAGS) $(CFLAGS) -o $@ $<
 
 obj/caller.o: c_src/caller.m header/ExampleClass-Swift.h
-	clang -I header -c $< -o $@
+	$(CC) -I header -c $< -o $@
 
 obj/ExampleClass.o: c_src/ExampleClass.swift
-	swiftc -emit-object -parse-as-library $< -o $@
+	xcrun swiftc -emit-object -parse-as-library $< -o $@
 
 header/ExampleClass-Swift.h: c_src/ExampleClass.swift
-	swiftc $< -emit-objc-header -emit-objc-header-path $@
+	xcrun swiftc $< -emit-objc-header -emit-objc-header-path $@
 
 include $(shell ls $(C_DEPS) 2>/dev/null)
 
